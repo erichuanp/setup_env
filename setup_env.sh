@@ -126,7 +126,7 @@ print_info "开始配置 SSH 和 Git..."
 if [ -d "$HOME/.ssh/.git" ]; then
     print_info "检测到 ~/.ssh/.git 已存在，直接同步配置..."
     cd "$HOME/.ssh" || exit 1
-    if retry_cmd git pull; then
+    if retry_cmd git pull origin main; then
         chmod 700 "$HOME/.ssh"
         chmod 600 "$HOME/.ssh"/* 2>/dev/null
         print_info "SSH配置已同步"
