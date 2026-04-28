@@ -126,6 +126,16 @@ print_info "开始配置 SSH 和 Git..."
 if [ -d "$HOME/.ssh/.git" ]; then
     print_info "检测到 ~/.ssh/.git 已存在，直接同步配置..."
     cd "$HOME/.ssh" || exit 1
+    
+    # 强制覆盖冲突文件（比如本地的 config）
+    if [ -f "config" ]; then
+        print_warn "检测到本地 config 文件，备份后覆盖..."
+        mv config config.bak.$(date +%s)
+    fi
+    
+    # 清理未追踪的文件避免 merge 冲突
+    git clean -fd 2>/dev/null
+    
     if retry_cmd git pull origin main; then
         chmod 700 "$HOME/.ssh"
         chmod 600 "$HOME/.ssh"/* 2>/dev/null
@@ -197,7 +207,7 @@ else
     # 6. 在 ~/.ssh/ 里初始化 git 仓库并添加远程仓库
     print_info "初始化 ~/.ssh Git 仓库..."
     cd "$HOME/.ssh" || exit 1
-    
+
     if [ ! -d ".git" ]; then
         git init
         print_info "Git 仓库初始化完成"
@@ -214,10 +224,10 @@ else
 
     # 7. 拉取配置并设置权限
     print_info "正在同步 SSH 配置..."
-    
+
     # 添加 GitHub 到 known_hosts 避免首次连接提示
-    ssh-keyscan -H github.com >> "$HOME/.ssh/known_hosts" 2>/dev/null
-    
+    ssh-keyscan -H ssh.github.com >> "$HOME/.ssh/known_hosts" 2>/dev/null
+
     if retry_cmd git pull origin main --allow-unrelated-histories 2>/dev/null || \
        retry_cmd git pull origin master --allow-unrelated-histories 2>/dev/null; then
         print_info "SSH 配置拉取成功"
@@ -228,7 +238,7 @@ else
     # 设置权限
     chmod 700 "$HOME/.ssh"
     chmod 600 "$HOME/.ssh"/* 2>/dev/null
-    
+
     print_info "SSH配置已同步"
 fi
 
@@ -347,6 +357,7 @@ export SHELL=/bin/zsh
 export ZSH="\$HOME/.oh-my-zsh"
 export LANG=$SELECTED_LOCALE
 export LC_ALL=$SELECTED_LOCALE
+export PATH="\$HOME/.npm-global/bin:\$PATH"
 export FZF_DEFAULT_COMMAND='rg --files --hidden --follow --glob "!.git/*"'
 export FZF_CTRL_R_OPTS="--preview 'echo {}'"
 
